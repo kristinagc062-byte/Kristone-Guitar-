@@ -29,7 +29,7 @@ export async function appendOrder(order:Order) {
   const tab=process.env.GOOGLE_SHEET_TAB_NAME||'Orders';
   if(!sheetId) throw new Error('GOOGLE_SHEET_ID is not configured.');
   const token=await getAccessToken();
-  const range=`'${tab.replace(/'/g,"''")}'!A:M`;
-  const response=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({values:[[order.orderId,order.dateTime,order.fullName,order.phone,order.email,order.location,order.productName,order.quantity,order.unitPrice,order.totalPrice,order.paymentMethod,order.orderStatus,order.notes||'']]})});
+  const range=`'${tab.replace(/'/g,"''")}'!A:Q`;
+  const response=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({values:[[order.orderId,order.dateTime,order.fullName,order.phone,order.email,order.province,order.district,order.municipality,order.fullAddress,order.productName,order.quantity,order.unitPrice,order.deliveryChargeLabel,order.totalAmountLabel,order.paymentMethod,order.orderStatus,order.notes||'']]})});
   if(!response.ok){ const message=await response.text(); console.error('Google Sheets append failed',response.status,message); throw new Error('The order could not be saved to Google Sheets.'); }
 }

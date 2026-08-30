@@ -8,13 +8,13 @@ const sans = Montserrat({ variable: '--font-sans-brand', subsets: ['latin'], wei
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'Kristone Premium Acoustic Guitar | Find Your Sound',
-  description: 'Premium acoustic tone and craftsmanship at a special launch price. Free delivery across Nepal and Cash on Delivery available.',
+  description: 'Premium acoustic tone and craftsmanship at a special launch price. FREE DELIVERY IN KATHMANDU, with outside-Valley delivery confirmed by location. Cash on Delivery available.',
   openGraph: {
     title: 'Kristone Guitars — Find Your Sound.',
-    description: 'Premium Acoustic Guitar. Free delivery across Nepal and Cash on Delivery available.',
+    description: 'Premium Acoustic Guitar. FREE DELIVERY IN KATHMANDU, with outside-Valley delivery confirmed by location. Cash on Delivery available.',
     images: [{ url: '/og.png', width: 1536, height: 1024, alt: 'Kristone Guitars — Find Your Sound.' }],
   },
-  twitter: { card: 'summary_large_image', title: 'Kristone Guitars — Find Your Sound.', description: 'Premium Acoustic Guitar.', images: ['/og.png'] },
+  twitter: { card: 'summary_large_image', title: 'Kristone Guitars — Find Your Sound.', description: 'Premium acoustic guitar with FREE DELIVERY IN KATHMANDU.', images: ['/og.png'] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -1,4 +1,19 @@
+import Image from 'next/image';
 import Link from 'next/link';
-export function Brand({ compact = false }: { compact?: boolean }) {
-  return <Link href="/" className="group inline-flex items-center gap-3" aria-label="Kristone Guitars home"><span className={`${compact ? 'size-9' : 'size-10'} grid place-items-center rounded-full border border-gold/45 text-gold transition group-hover:bg-gold group-hover:text-black`}><span className="font-serif text-xl italic">K</span></span><span><span className="block font-serif text-base tracking-[0.16em] text-white sm:text-lg">KRISTONE</span><span className="block text-[8px] tracking-[0.42em] text-gold">GUITARS</span></span></Link>;
+
+export function Brand({ compact = false, hero = false, className = '', priority = false }: { compact?: boolean; hero?: boolean; className?: string; priority?: boolean }) {
+  const widthClass = hero ? 'w-[204px] sm:w-[240px] lg:w-[272px]' : compact ? 'w-[114px] sm:w-[128px]' : 'w-[156px] sm:w-[180px]';
+  return (
+    <Link href="/" className={`block shrink-0 ${widthClass} ${className}`} aria-label="Kristone Guitars home">
+      <Image
+        src="/images/kristone-logo.png"
+        alt="KRISTONE GUITARS logo"
+        width={1536}
+        height={1024}
+        priority={priority}
+        className="h-auto w-full object-contain"
+        sizes={compact ? '(max-width: 640px) 114px, 128px' : '(max-width: 640px) 156px, 180px'}
+      />
+    </Link>
+  );
 }
