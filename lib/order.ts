@@ -59,8 +59,7 @@ export function validateOrder(value: unknown): { data?: OrderInput; errors?: Rec
   if (data.productName !== PRODUCT.name) errors.productName = 'Invalid product.';
   if (!Number.isInteger(data.quantity) || data.quantity < 1 || data.quantity > 10) errors.quantity = 'Quantity must be between 1 and 10.';
   if (data.unitPrice !== PRODUCT.price) errors.unitPrice = 'Invalid unit price.';
-  if (!['Black', 'Coffee', 'Custom', 'Custom Color'].includes(data.colorChoice)) errors.colorChoice = 'Please choose a guitar color.';
-  if (data.colorChoice === 'Custom Color') data.colorChoice = 'Custom';
+  if (!['Black', 'Coffee', 'Custom'].includes(data.colorChoice)) errors.colorChoice = 'Please choose a guitar color.';
   if (data.colorChoice === 'Custom' && !isHexColor(data.customColor)) errors.customColor = 'Please choose a valid custom color.';
 
   return Object.keys(errors).length ? { errors } : { data };
