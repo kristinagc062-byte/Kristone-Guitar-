@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { ArrowLeft, Check, MessageCircle } from 'lucide-react';
 import { Brand } from '@/components/brand';
 import { PRODUCT, formatNpr } from '@/lib/product';
@@ -120,10 +119,10 @@ export function ThankYou() {
                   <MessageCircle className="size-4" />
                   WhatsApp Support
                 </a>
-                <Link href="/" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 px-6 py-3 text-xs font-bold uppercase tracking-[0.16em] text-stone-300 transition hover:border-gold hover:text-gold">
+                <a href="/" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 px-6 py-3 text-xs font-bold uppercase tracking-[0.16em] text-stone-300 transition hover:border-gold hover:text-gold">
                   <ArrowLeft className="size-4" />
                   Back to Home
-                </Link>
+                </a>
               </div>
             </div>
           </div>

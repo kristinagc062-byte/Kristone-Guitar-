@@ -1,8 +1,6 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { ArrowLeft, Check, LockKeyhole, MapPinned, Minus, Plus, ShieldCheck, Truck } from 'lucide-react';
 import { Brand } from '@/components/brand';
 import { Input } from '@/components/ui/input';
@@ -44,7 +42,6 @@ const colorOptions: Array<{ value: ColorChoice; label: string; swatch: string }>
 ];
 
 export function CheckoutForm() {
-  const router = useRouter();
   const [fields, setFields] = useState<Fields>(empty);
   const [quantity, setQuantity] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -134,7 +131,7 @@ export function CheckoutForm() {
         municipality: fields.municipality,
         fullAddress: fields.fullAddress,
       });
-      router.push(`/thank-you?${params}`);
+      window.location.assign(`/thank-you?${params}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'We could not submit your order. Please try again.');
       setSubmitting(false);
@@ -354,10 +351,10 @@ export function CheckoutForm() {
             </div>
           </div>
 
-          <Link href="/" className="flex items-center justify-center gap-2 rounded-full border border-gold/50 px-7 py-4 text-xs font-bold uppercase tracking-[0.16em] text-gold transition hover:bg-gold hover:text-black">
+          <a href="/" className="flex items-center justify-center gap-2 rounded-full border border-gold/50 px-7 py-4 text-xs font-bold uppercase tracking-[0.16em] text-gold transition hover:bg-gold hover:text-black">
             <ArrowLeft className="size-4" />
             Continue shopping
-          </Link>
+          </a>
         </aside>
       </div>
     </main>
