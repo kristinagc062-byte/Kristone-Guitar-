@@ -1,13 +1,36 @@
 import type { Order } from '@/lib/order';
 import { escapeHtml } from '@/lib/order';
 import { formatNpr } from '@/lib/product';
+import nodemailer from 'nodemailer';
 
 const row=(label:string,value:string|number)=>`<tr><td style="padding:8px 0;color:#8c8275;font-size:13px">${escapeHtml(label)}</td><td style="padding:8px 0;text-align:right;color:#17130e;font-size:13px;font-weight:700">${escapeHtml(value)}</td></tr>`;
 const shell=(brand:string,preheader:string,content:string)=>`<!doctype html><html><body style="margin:0;background:#eee9df;font-family:Arial,sans-serif;color:#17130e"><div style="display:none;max-height:0;overflow:hidden">${escapeHtml(preheader)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eee9df"><tr><td align="center" style="padding:28px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fff;border-radius:18px;overflow:hidden"><tr><td style="background:#11100e;padding:28px;text-align:center;color:#caa052;font-family:Georgia,serif;font-size:23px;letter-spacing:3px">${escapeHtml(brand)}</td></tr><tr><td style="padding:34px 28px">${content}</td></tr><tr><td style="background:#f7f4ee;padding:20px 28px;text-align:center;color:#8c8275;font-size:11px;letter-spacing:1px">FIND YOUR SOUND.</td></tr></table></td></tr></table></body></html>`;
 
 async function sendEmail(to:string,subject:string,html:string,replyTo:string) {
+  const smtpHost=process.env.EMAIL_SMTP_HOST;
+  const smtpPort=Number(process.env.EMAIL_SMTP_PORT||465);
+  const smtpUser=process.env.EMAIL_SMTP_USER;
+  const smtpPassword=process.env.EMAIL_SMTP_PASSWORD;
+  const from=process.env.EMAIL_FROM || smtpUser;
+
+  if (smtpHost && smtpUser && smtpPassword && from) {
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPassword },
+    });
+    await transporter.sendMail({
+      from,
+      to,
+      replyTo,
+      subject,
+      html,
+    });
+    return;
+  }
+
   const key=process.env.EMAIL_SERVICE_API_KEY;
-  const from=process.env.EMAIL_FROM;
   if(!key||!from) throw new Error('Email service credentials are not configured.');
   const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[to],reply_to:replyTo,subject,html})});
   if(!response.ok){ const message=await response.text(); console.error('Email send failed',response.status,message); throw new Error('An order email could not be sent.'); }
@@ -15,7 +38,7 @@ async function sendEmail(to:string,subject:string,html:string,replyTo:string) {
 
 export async function sendOrderEmails(order:Order) {
   const brand=process.env.BRAND_NAME||'KRISTONE GUITARS';
-  const business=process.env.BUSINESS_EMAIL;
+  const business=process.env.BUSINESS_EMAIL || process.env.EMAIL_SMTP_USER;
   const replyTo=process.env.EMAIL_REPLY_TO||business||'digitalbykristina@gmail.com';
   if(!business) throw new Error('BUSINESS_EMAIL is not configured.');
   const deliveryText = order.deliveryCharge === 0 ? 'FREE DELIVERY IN KATHMANDU' : order.deliveryChargeLabel;

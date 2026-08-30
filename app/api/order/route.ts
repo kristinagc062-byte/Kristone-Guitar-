@@ -19,7 +19,9 @@ export async function POST(request:Request) {
     const totalAmount=validated.data.unitPrice*validated.data.quantity+(deliveryCharge??0);
     const order:Order={...validated.data,orderId:`KRG-${now.toISOString().slice(0,10).replace(/-/g,'')}-${crypto.randomUUID().slice(0,6).toUpperCase()}`,dateTime:new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kathmandu',dateStyle:'medium',timeStyle:'short'}).format(now),deliveryAssessment,deliveryCharge,deliveryChargeLabel:deliveryAssessment.chargeLabel,totalAmount,totalAmountLabel:deliveryAssessment.charge===null ? 'To be confirmed after address review' : formatNpr(totalAmount),paymentMethod:'Cash On Delivery',orderStatus:'New Order'};
     const hasSheets=Boolean(process.env.GOOGLE_SHEET_ID&&process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL&&process.env.GOOGLE_PRIVATE_KEY);
-    const hasEmail=Boolean(process.env.EMAIL_SERVICE_API_KEY&&process.env.EMAIL_FROM&&process.env.BUSINESS_EMAIL);
+    const hasSmtpEmail=Boolean(process.env.EMAIL_SMTP_HOST&&process.env.EMAIL_SMTP_PORT&&process.env.EMAIL_SMTP_USER&&process.env.EMAIL_SMTP_PASSWORD);
+    const hasResendEmail=Boolean(process.env.EMAIL_SERVICE_API_KEY&&process.env.EMAIL_FROM&&process.env.BUSINESS_EMAIL);
+    const hasEmail=hasSmtpEmail||hasResendEmail;
     if(hasSheets) {
       try { await appendOrder(order); }
       catch(error) { console.error('Google Sheets append failed',error); }
