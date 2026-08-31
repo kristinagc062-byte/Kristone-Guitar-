@@ -5,6 +5,7 @@ import nodemailer from 'nodemailer';
 
 const row=(label:string,value:string|number)=>`<tr><td style="padding:8px 0;color:#8c8275;font-size:13px">${escapeHtml(label)}</td><td style="padding:8px 0;text-align:right;color:#17130e;font-size:13px;font-weight:700">${escapeHtml(value)}</td></tr>`;
 const shell=(brand:string,preheader:string,content:string)=>`<!doctype html><html><body style="margin:0;background:#eee9df;font-family:Arial,sans-serif;color:#17130e"><div style="display:none;max-height:0;overflow:hidden">${escapeHtml(preheader)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eee9df"><tr><td align="center" style="padding:28px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fff;border-radius:18px;overflow:hidden"><tr><td style="background:#11100e;padding:28px;text-align:center;color:#caa052;font-family:Georgia,serif;font-size:23px;letter-spacing:3px">${escapeHtml(brand)}</td></tr><tr><td style="padding:34px 28px">${content}</td></tr><tr><td style="background:#f7f4ee;padding:20px 28px;text-align:center;color:#8c8275;font-size:11px;letter-spacing:1px">FIND YOUR SOUND.</td></tr></table></td></tr></table></body></html>`;
+const maskEmail=(value:string)=>{ const [name,domain]=value.split('@'); return domain ? `${(name||'').slice(0,2)}***@${domain}` : '***'; };
 
 async function sendEmail(to:string,subject:string,html:string,replyTo:string) {
   const smtpHost=process.env.EMAIL_SMTP_HOST;
@@ -14,26 +15,31 @@ async function sendEmail(to:string,subject:string,html:string,replyTo:string) {
   const from=process.env.EMAIL_FROM || smtpUser;
 
   if (smtpHost && smtpUser && smtpPassword && from) {
+    const secure = smtpPort === 465;
+    console.info('[email] SMTP send starting', { host: smtpHost, port: smtpPort, secure, user: maskEmail(smtpUser), to: maskEmail(to), from: maskEmail(from.replace(/^.*<([^>]+)>.*$/, '$1')), replyTo: maskEmail(replyTo) });
     const transporter = nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
-      secure: smtpPort === 465,
+      secure,
       auth: { user: smtpUser, pass: smtpPassword },
     });
-    await transporter.sendMail({
-      from,
-      to,
-      replyTo,
-      subject,
-      html,
-    });
+    try {
+      await transporter.verify();
+      const info = await transporter.sendMail({ from, to, replyTo, subject, html });
+      console.info('[email] SMTP send succeeded', { messageId: info.messageId, to: maskEmail(to) });
+    } catch (error) {
+      console.error('[email] SMTP send failed', { host: smtpHost, port: smtpPort, secure, user: maskEmail(smtpUser), to: maskEmail(to), error: error instanceof Error ? { name: error.name, message: error.message, code: (error as NodeJS.ErrnoException).code, response: (error as { response?: string }).response } : error });
+      throw error;
+    }
     return;
   }
 
   const key=process.env.EMAIL_SERVICE_API_KEY;
   if(!key||!from) throw new Error('Email service credentials are not configured.');
   const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[to],reply_to:replyTo,subject,html})});
-  if(!response.ok){ const message=await response.text(); console.error('Email send failed',response.status,message); throw new Error('An order email could not be sent.'); }
+  if(!response.ok){ const message=await response.text(); console.error('[email] Resend send failed',{status:response.status,to:maskEmail(to),message}); throw new Error('An order email could not be sent.'); }
+  const result = await response.json().catch(() => ({})) as { id?: string };
+  console.info('[email] Resend send succeeded', { id: result.id, to: maskEmail(to) });
 }
 
 export async function sendOrderEmails(order:Order) {
