@@ -6,9 +6,20 @@ import { resolveDeliveryAssessment } from '@/lib/delivery';
 import { PRODUCT, formatNpr } from '@/lib/product';
 
 export async function POST(request:Request) {
-  const allowed=process.env.FRONTEND_URL;
   const origin=request.headers.get('origin');
-  if(allowed&&origin&&new URL(allowed).origin!==origin) return NextResponse.json({success:false,error:'Origin not allowed.'},{status:403});
+  const configuredOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`,
+    process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
+    ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000', 'http://127.0.0.1:3000'] : []),
+  ].filter(Boolean).map((value) => {
+    try { return new URL(value as string).origin; } catch { return null; }
+  }).filter((value): value is string => Boolean(value));
+  if (origin && !configuredOrigins.includes(origin)) {
+    console.warn('[order] rejected origin', { origin, allowedOrigins: configuredOrigins });
+    return NextResponse.json({success:false,error:'Origin not allowed.'},{status:403});
+  }
   try {
     const body=await request.json();
     const validated=validateOrder(body);
@@ -23,12 +34,12 @@ export async function POST(request:Request) {
     const hasResendEmail=Boolean(process.env.EMAIL_SERVICE_API_KEY&&process.env.EMAIL_FROM&&process.env.BUSINESS_EMAIL);
     const hasEmail=hasSmtpEmail||hasResendEmail;
     if(hasSheets) {
-      try { await appendOrder(order); }
-      catch(error) { console.error('Google Sheets append failed',error); }
+      try { await appendOrder(order); console.info('[order] saved to Google Sheets', { orderId: order.orderId }); }
+      catch(error) { console.error('[order] Google Sheets append failed', { orderId: order.orderId, error: error instanceof Error ? error.message : error }); }
     }
     if(hasEmail) {
-      try { await sendOrderEmails(order); }
-      catch(error) { console.error('Email send failed',error); }
+      try { await sendOrderEmails(order); console.info('[order] confirmation emails sent', { orderId: order.orderId }); }
+      catch(error) { console.error('[order] email send failed', { orderId: order.orderId, error: error instanceof Error ? error.message : error }); }
     }
     return NextResponse.json({success:true,orderId:order.orderId,productName:order.productName,quantity:order.quantity,totalAmount:order.totalAmount,totalAmountLabel:order.totalAmountLabel,deliveryCharge:order.deliveryCharge,deliveryChargeLabel:order.deliveryChargeLabel,deliveryNote:deliveryAssessment.note,productPrice:formatNpr(PRODUCT.price),paymentMethod:order.paymentMethod,colorChoice:order.colorChoice,customColor:order.customColor,province:order.province,district:order.district,municipality:order.municipality,fullAddress:order.fullAddress});
   } catch(error) {
