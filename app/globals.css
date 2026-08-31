@@ -51,7 +51,20 @@
 
 body { font-family: var(--font-sans-brand), Arial, Helvetica, sans-serif; }
 
-html { scroll-behavior: smooth; background: #090908; }
+html {
+  scroll-behavior: smooth;
+  background: #090908;
+  width: 100%;
+  min-width: 0;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+}
 ::selection { background: #caa052; color: #090908; }
 
 @layer components {
