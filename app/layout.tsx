@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { Viewport } from 'next';
 import { Cormorant_Garamond, Montserrat } from 'next/font/google';
 import './globals.css';
 
@@ -15,6 +16,14 @@ export const metadata: Metadata = {
     images: [{ url: '/og.png', width: 1536, height: 1024, alt: 'Kristone Guitars — Find Your Sound.' }],
   },
   twitter: { card: 'summary_large_image', title: 'Kristone Guitars — Find Your Sound.', description: 'Premium acoustic guitar with FREE DELIVERY IN KATHMANDU.', images: ['/og.png'] },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
