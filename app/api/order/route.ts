@@ -30,16 +30,32 @@ export async function POST(request:Request) {
     const totalAmount=validated.data.unitPrice*validated.data.quantity+(deliveryCharge??0);
     const order:Order={...validated.data,orderId:`KRG-${now.toISOString().slice(0,10).replace(/-/g,'')}-${crypto.randomUUID().slice(0,6).toUpperCase()}`,dateTime:new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kathmandu',dateStyle:'medium',timeStyle:'short'}).format(now),deliveryAssessment,deliveryCharge,deliveryChargeLabel:deliveryAssessment.chargeLabel,totalAmount,totalAmountLabel:deliveryAssessment.charge===null ? 'To be confirmed after address review' : formatNpr(totalAmount),paymentMethod:'Cash On Delivery',orderStatus:'New Order'};
     const hasSheets=Boolean(process.env.GOOGLE_SHEET_ID&&process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL&&process.env.GOOGLE_PRIVATE_KEY);
-    const hasSmtpEmail=Boolean(process.env.EMAIL_SMTP_HOST&&process.env.EMAIL_SMTP_PORT&&process.env.EMAIL_SMTP_USER&&process.env.EMAIL_SMTP_PASSWORD);
-    const hasResendEmail=Boolean(process.env.EMAIL_SERVICE_API_KEY&&process.env.EMAIL_FROM&&process.env.BUSINESS_EMAIL);
-    const hasEmail=hasSmtpEmail||hasResendEmail;
+    const smtpVariables = ['EMAIL_SMTP_HOST', 'EMAIL_SMTP_PORT', 'EMAIL_SMTP_USER', 'EMAIL_SMTP_PASSWORD', 'EMAIL_FROM', 'BUSINESS_EMAIL'];
+    const missingSmtpVariables = smtpVariables.filter((name) => !process.env[name]);
+    const resendVariables = ['EMAIL_SERVICE_API_KEY', 'EMAIL_FROM', 'BUSINESS_EMAIL'];
+    const missingResendVariables = resendVariables.filter((name) => !process.env[name]);
+    const hasSmtpEmail = missingSmtpVariables.length === 0;
+    const hasResendEmail = missingResendVariables.length === 0;
+    const hasEmail = hasSmtpEmail || hasResendEmail;
     if(hasSheets) {
       try { await appendOrder(order); console.info('[order] saved to Google Sheets', { orderId: order.orderId }); }
       catch(error) { console.error('[order] Google Sheets append failed', { orderId: order.orderId, error: error instanceof Error ? error.message : error }); }
     }
     if(hasEmail) {
-      try { await sendOrderEmails(order); console.info('[order] confirmation emails sent', { orderId: order.orderId }); }
-      catch(error) { console.error('[order] email send failed', { orderId: order.orderId, error: error instanceof Error ? error.message : error }); }
+      console.log('[email] starting send', { orderId: order.orderId, transport: hasSmtpEmail ? 'smtp' : 'resend' });
+      try {
+        await sendOrderEmails(order);
+        console.info('[email] send completed', { orderId: order.orderId });
+        console.info('[order] confirmation emails sent', { orderId: order.orderId });
+      } catch(error) {
+        console.error('[email] send failed', { orderId: order.orderId, error: error instanceof Error ? { name: error.name, message: error.message, code: (error as NodeJS.ErrnoException).code } : error });
+        console.error('[order] email send failed', { orderId: order.orderId, error: error instanceof Error ? error.message : error });
+      }
+    } else {
+      console.warn('[email] send skipped; missing environment variables', {
+        smtpMissing: missingSmtpVariables,
+        resendMissing: missingResendVariables,
+      });
     }
     return NextResponse.json({success:true,orderId:order.orderId,productName:order.productName,quantity:order.quantity,totalAmount:order.totalAmount,totalAmountLabel:order.totalAmountLabel,deliveryCharge:order.deliveryCharge,deliveryChargeLabel:order.deliveryChargeLabel,deliveryNote:deliveryAssessment.note,productPrice:formatNpr(PRODUCT.price),paymentMethod:order.paymentMethod,colorChoice:order.colorChoice,customColor:order.customColor,province:order.province,district:order.district,municipality:order.municipality,fullAddress:order.fullAddress});
   } catch(error) {
