@@ -7,7 +7,9 @@ import { PRODUCT, formatNpr } from '@/lib/product';
 
 export async function POST(request:Request) {
   const origin=request.headers.get('origin');
+  const customProductionOrigin = 'https://kristoneguitar.kistinagc.com.np';
   const configuredOrigins = [
+    customProductionOrigin,
     process.env.FRONTEND_URL,
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`,
